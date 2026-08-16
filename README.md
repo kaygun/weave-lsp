@@ -85,11 +85,11 @@ pandoc artefacts/output_centralizers.md -s -c mlisp.css --mathjax -o artefacts/o
 
 ### Code Cell Definition
 
-```markdown
+````markdown
 ```name:fetch_data lang:bash type:json code:visible output:hidden
 echo '[{"id": 1, "score": 95}, {"id": 2, "score": 88}]'
 ```
-```
+````
 
 #### Supported Header Attributes
 
@@ -104,23 +104,23 @@ echo '[{"id": 1, "score": 95}, {"id": 2, "score": 88}]'
 
 ### Downstream Piping Example
 
-```markdown
+````markdown
 ```name:process_python input:fetch_data lang:python type:json code:visible output:hidden
 import os, json
 data = json.loads(os.getenv("WEAVE_INPUT"))
 top = [u for u in data if u["score"] > 90]
 print(json.dumps(top))
 ```
-```
+````
 
 ### Display Blocks
 
 To render a stored buffer at a specific location in the document:
 
-```markdown
+````markdown
 ```render:process_python type:json
 ```
-```
+````
 
 ---
 

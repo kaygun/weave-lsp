@@ -8,10 +8,12 @@ Today, I am going to write something that I have been playing around with, and f
 
 ## Step 1: Generate Visual Plot & Data Artifact in Python
 
-Here, Python calculates wave function metrics, writes a vector image artifact (`sine_wave.svg`), and outputs a dataset file (`metrics.json`):
+Here, Python calculates wave function metrics, writes a vector image artifact (`artefacts/sine_wave.svg`), and outputs a dataset file (`artefacts/metrics.json`):
 
 ```name:python_artifacts lang:python code:visible output:hidden
-import math, json
+import math, json, os
+
+os.makedirs("artefacts", exist_ok=True)
 
 # Generate data points
 x_vals = [i * 0.1 for i in range(50)]
@@ -23,17 +25,17 @@ svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="400" height="20
   <text x="20" y="30" fill="#cdd6f4" font-family="sans-serif" font-size="14">weave-lsp Polyglot Wave</text>
 </svg>'''
 
-with open("sine_wave.svg", "w") as f:
+with open("artefacts/sine_wave.svg", "w") as f:
     f.write(svg_content)
 
 metrics = {
     "points_count": len(x_vals),
     "min_val": round(min(y_vals), 4),
     "max_val": round(max(y_vals), 4),
-    "image_artifact": "sine_wave.svg"
+    "image_artifact": "artefacts/sine_wave.svg"
 }
 
-with open("metrics.json", "w") as f:
+with open("artefacts/metrics.json", "w") as f:
     json.dump(metrics, f, indent=2)
 
 print(json.dumps(metrics))
@@ -41,12 +43,12 @@ print(json.dumps(metrics))
 
 ## Step 2: Read and Summarize Artifact File in Clojure
 
-Next, a Clojure cell consumes the piped input buffer and reads the generated `metrics.json` file directly from the filesystem:
+Next, a Clojure cell consumes the piped input buffer and reads the generated `artefacts/metrics.json` file directly from the filesystem:
 
 ```name:clj_artifact_summary input:python_artifacts lang:clojure code:visible output:hidden
 (let [raw-input (or (System/getProperty "WEAVE_INPUT") (System/getenv "WEAVE_INPUT"))
-      file-content (slurp "metrics.json")]
-  (println (str "Read metrics.json (" (count file-content) " bytes)")))
+      file-content (slurp "artefacts/metrics.json")]
+  (println (str "Read artefacts/metrics.json (" (count file-content) " bytes)")))
 ```
 
 ## Step 3: Read and Analyze Artifact File in Common Lisp
@@ -55,9 +57,9 @@ A Common Lisp cell also accesses the generated artifact file:
 
 ```name:lisp_artifact_summary input:python_artifacts lang:lisp code:visible output:hidden
 (let ((raw-input (sb-ext:posix-getenv "WEAVE_INPUT")))
-  (with-open-file (stream "metrics.json")
+  (with-open-file (stream "artefacts/metrics.json")
     (let ((file-bytes (file-length stream)))
-      (format t "Read metrics.json (~a bytes)~%" file-bytes))))
+      (format t "Read artefacts/metrics.json (~a bytes)~%" file-bytes))))
 ```
 
 ## Step 4: Render Display Blocks & Embedded Image Artifact

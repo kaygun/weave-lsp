@@ -18,3 +18,7 @@ build/
 
 # Generated scratch files
 scratch/
+
+# Agent workflow artifacts
+implementation_plan.md
+walkthrough.md
