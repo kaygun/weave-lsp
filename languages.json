@@ -12,6 +12,18 @@
       "sentinelTemplate": "print(\"%s\", flush=True)",
       "fileExtension": ".py"
     },
+    "r": {
+      "lspCommand": ["R", "--slave", "-e", "languageserver::run()"],
+      "runnerCommand": ["Rscript"],
+      "sentinelTemplate": "cat(\"%s\\n\")",
+      "fileExtension": ".R"
+    },
+    "R": {
+      "lspCommand": ["R", "--slave", "-e", "languageserver::run()"],
+      "runnerCommand": ["Rscript"],
+      "sentinelTemplate": "cat(\"%s\\n\")",
+      "fileExtension": ".R"
+    },
     "bash": {
       "lspCommand": ["bash-language-server", "start"],
       "runnerCommand": ["bash"],
