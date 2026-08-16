@@ -1,0 +1,20 @@
+# Scala & Scala-CLI build directories
+.scala-build/
+.bsp/
+.metals/
+.bloop/
+target/
+build/
+
+# IDE & OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Temporary weave-lsp execution files
+/tmp/weave_session_*
+
+# Generated scratch files
+scratch/

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10.1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>output_counting_graphs</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="mlisp.css" />
+  <script defer=""
+  src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js"
+  type="text/javascript"></script>
+</head>
+<body>
+<h1
+id="counting-graphs-with-a-prescribed-degree-sequence-scala-version">Counting
+Graphs with a Prescribed Degree Sequence (Scala Version)</h1>
+<p>Adopted from Atabey Kaygun’s blog post: <a
+href="https://kaygun.github.io/clean/2026-04-12-counting-graphs-scala.html">Counting
+Graphs with a Prescribed Degree Sequence (Scala Version)</a>.</p>
+<h2 id="description-of-the-problem">Description of the Problem</h2>
+<p>Earlier I explained the mathematical theory behind counting
+isomorphism classes of graphs that have a prescribed degree sequence. In
+that post, I also implemented a Lisp version of the counting algorithm.
+Today, I am going to write a Scala version of the same code.</p>
+<h2 id="implementation">Implementation</h2>
+<p>Scala does not have a framework/library to implement general
+memoization out-of-the-box, but you can hand-roll one using a memoized
+fixed-point combinator:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode scala"><code class="sourceCode scala"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> scala<span class="op">.</span>collection<span class="op">.</span>mutable</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> memoFix<span class="op">[</span>A<span class="op">,</span> B<span class="op">](</span>f<span class="op">:</span> <span class="op">(</span>A <span class="op">=&gt;</span> B<span class="op">)</span> <span class="op">=&gt;</span> A <span class="op">=&gt;</span> B<span class="op">):</span> A <span class="op">=&gt;</span> B <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">val</span> cache <span class="op">=</span> mutable<span class="op">.</span><span class="ex">HashMap</span><span class="op">[</span>A<span class="op">,</span> B<span class="op">]()</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">lazy</span> <span class="kw">val</span> g<span class="op">:</span> A <span class="op">=&gt;</span> B <span class="op">=</span> a <span class="op">=&gt;</span> cache<span class="op">.</span><span class="fu">getOrElseUpdate</span><span class="op">(</span>a<span class="op">,</span> <span class="fu">f</span><span class="op">(</span>g<span class="op">)(</span>a<span class="op">))</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  g</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">val</span> graphCount<span class="op">:</span> <span class="ex">List</span><span class="op">[</span><span class="bu">Int</span><span class="op">]</span> <span class="op">=&gt;</span> BigInt <span class="op">=</span> memoFix <span class="op">{</span> self <span class="op">=&gt;</span> ds <span class="op">=&gt;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  ds <span class="cf">match</span> <span class="op">{</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> Nil                  <span class="op">=&gt;</span> <span class="fu">BigInt</span><span class="op">(</span><span class="dv">0</span><span class="op">)</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> <span class="ex">List</span><span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="dv">1</span><span class="op">)</span>           <span class="op">=&gt;</span> <span class="fu">BigInt</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> _ <span class="cf">if</span> ds<span class="op">.</span>length <span class="op">&lt;</span> <span class="dv">3</span>   <span class="op">=&gt;</span> <span class="fu">BigInt</span><span class="op">(</span><span class="dv">0</span><span class="op">)</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> _ <span class="cf">if</span> ds<span class="op">.</span>sum <span class="op">%</span> <span class="dv">2</span> <span class="op">!=</span> <span class="dv">0</span> <span class="op">=&gt;</span> <span class="fu">BigInt</span><span class="op">(</span><span class="dv">0</span><span class="op">)</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> first <span class="op">::</span> rest <span class="op">=&gt;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>      rest<span class="op">.</span>indices<span class="op">.</span>toList<span class="op">.</span><span class="fu">combinations</span><span class="op">(</span>first<span class="op">).</span>map <span class="op">{</span> is <span class="op">=&gt;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="kw">val</span> idxSet <span class="op">=</span> is<span class="op">.</span>toSet</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        <span class="fu">self</span><span class="op">(</span>rest<span class="op">.</span>zipWithIndex</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>          <span class="op">.</span><span class="fu">map</span><span class="op">((</span>d<span class="op">,</span> i<span class="op">)</span> <span class="op">=&gt;</span> <span class="cf">if</span> <span class="op">(</span><span class="fu">idxSet</span><span class="op">(</span>i<span class="op">))</span> d <span class="op">-</span> <span class="dv">1</span> <span class="cf">else</span> d<span class="op">)</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>          <span class="op">.</span><span class="fu">filter</span><span class="op">(</span>_ <span class="op">&gt;</span> <span class="dv">0</span><span class="op">).</span>sorted<span class="op">)</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>      <span class="op">}.</span>sum</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span><span class="op">(</span><span class="fu">graphCount</span><span class="op">(</span><span class="ex">List</span><span class="op">(</span><span class="dv">4</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">4</span><span class="op">)))</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span><span class="op">(</span><span class="fu">graphCount</span><span class="op">(</span><span class="ex">List</span><span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">2</span><span class="op">)))</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span><span class="op">(</span><span class="fu">graphCount</span><span class="op">(</span><span class="ex">List</span><span class="op">(</span><span class="dv">2</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">2</span><span class="op">)))</span></span></code></pre></div>
+<h2 id="large-examples-regular-graph-sequences">Large Examples &amp;
+Regular Graph Sequences</h2>
+<p>Now, for the large interesting examples:</p>
+<h3
+id="oeis-a001205-number-of-2-regular-graphs-on-n-vertices-n3..7">OEIS
+A001205: Number of 2-regular graphs on <span
+class="math inline">\(n\)</span> vertices (<span
+class="math inline">\(n=3..7\)</span>)</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode scala"><code class="sourceCode scala"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">val</span> seq2 <span class="op">=</span> <span class="op">(</span><span class="dv">3</span> to <span class="dv">7</span><span class="op">).</span><span class="fu">map</span><span class="op">(</span>n <span class="op">=&gt;</span> <span class="fu">graphCount</span><span class="op">(</span><span class="ex">List</span><span class="op">.</span><span class="fu">fill</span><span class="op">(</span>n<span class="op">)(</span><span class="dv">2</span><span class="op">)))</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span><span class="op">(</span>seq2<span class="op">.</span>toVector<span class="op">)</span></span></code></pre></div>
+<h3
+id="oeis-a002829-number-of-3-regular-graphs-on-2n-vertices-n2..5">OEIS
+A002829: Number of 3-regular graphs on <span
+class="math inline">\(2n\)</span> vertices (<span
+class="math inline">\(n=2..5\)</span>)</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode scala"><code class="sourceCode scala"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">val</span> seq3 <span class="op">=</span> <span class="op">(</span><span class="dv">2</span> to <span class="dv">5</span><span class="op">).</span><span class="fu">map</span><span class="op">(</span>n <span class="op">=&gt;</span> <span class="fu">graphCount</span><span class="op">(</span><span class="ex">List</span><span class="op">.</span><span class="fu">fill</span><span class="op">(</span><span class="dv">2</span> <span class="op">*</span> n<span class="op">)(</span><span class="dv">3</span><span class="op">)))</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span><span class="op">(</span>seq3<span class="op">.</span>toVector<span class="op">)</span></span></code></pre></div>
+<h3
+id="oeis-a005815-number-of-4-regular-graphs-on-n-vertices-n5..8">OEIS
+A005815: Number of 4-regular graphs on <span
+class="math inline">\(n\)</span> vertices (<span
+class="math inline">\(n=5..8\)</span>)</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode scala"><code class="sourceCode scala"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">val</span> seq4 <span class="op">=</span> <span class="op">(</span><span class="dv">5</span> to <span class="dv">8</span><span class="op">).</span><span class="fu">map</span><span class="op">(</span>n <span class="op">=&gt;</span> <span class="fu">graphCount</span><span class="op">(</span><span class="ex">List</span><span class="op">.</span><span class="fu">fill</span><span class="op">(</span>n<span class="op">)(</span><span class="dv">4</span><span class="op">)))</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span><span class="op">(</span>seq4<span class="op">.</span>toVector<span class="op">)</span></span></code></pre></div>
+<h3
+id="oeis-a338978-number-of-5-regular-graphs-on-2n-vertices-n3..5">OEIS
+A338978: Number of 5-regular graphs on <span
+class="math inline">\(2n\)</span> vertices (<span
+class="math inline">\(n=3..5\)</span>)</h3>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode scala"><code class="sourceCode scala"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">val</span> seq5 <span class="op">=</span> <span class="op">(</span><span class="dv">3</span> to <span class="dv">5</span><span class="op">).</span><span class="fu">map</span><span class="op">(</span>n <span class="op">=&gt;</span> <span class="fu">graphCount</span><span class="op">(</span><span class="ex">List</span><span class="op">.</span><span class="fu">fill</span><span class="op">(</span><span class="dv">2</span> <span class="op">*</span> n<span class="op">)(</span><span class="dv">5</span><span class="op">)))</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span><span class="op">(</span>seq5<span class="op">.</span>toVector<span class="op">)</span></span></code></pre></div>
+<h2 id="results-display-blocks">Results &amp; Display Blocks</h2>
+<h3 id="base-degree-sequences-output">Base Degree Sequences Output</h3>
+<pre class="plaintext"><code>1
+7
+12</code></pre>
+<h3 id="regular-graphs-sequence-a001205">2-Regular Graphs Sequence
+(A001205)</h3>
+<pre class="plaintext"><code>Vector(1, 3, 12, 70, 465)</code></pre>
+<h3 id="regular-graphs-sequence-a002829">3-Regular Graphs Sequence
+(A002829)</h3>
+<pre class="plaintext"><code>Vector(1, 70, 19355, 11180820)</code></pre>
+<h3 id="regular-graphs-sequence-a005815">4-Regular Graphs Sequence
+(A005815)</h3>
+<pre class="plaintext"><code>Vector(1, 15, 465, 19355)</code></pre>
+<h3 id="regular-graphs-sequence-a338978">5-Regular Graphs Sequence
+(A338978)</h3>
+<pre class="plaintext"><code>Vector(1, 3507, 66462606)</code></pre>
+</body>
+</html>

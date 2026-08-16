@@ -1,0 +1,78 @@
+{
+  "languages": {
+    "scala": {
+      "lspCommand": ["metals"],
+      "runnerCommand": ["scala-cli", "run", "-q"],
+      "sentinelTemplate": "println(\"%s\")",
+      "fileExtension": ".sc"
+    },
+    "python": {
+      "lspCommand": ["pyright-langserver", "--stdio"],
+      "runnerCommand": ["python3", "-u", "-i", "-q"],
+      "sentinelTemplate": "print(\"%s\", flush=True)",
+      "fileExtension": ".py"
+    },
+    "bash": {
+      "lspCommand": ["bash-language-server", "start"],
+      "runnerCommand": ["bash"],
+      "sentinelTemplate": "echo \"%s\"",
+      "fileExtension": ".sh"
+    },
+    "sh": {
+      "lspCommand": ["bash-language-server", "start"],
+      "runnerCommand": ["sh"],
+      "sentinelTemplate": "echo \"%s\"",
+      "fileExtension": ".sh"
+    },
+    "clojure": {
+      "lspCommand": ["clojure-lsp"],
+      "runnerCommand": ["clojure", "-M"],
+      "sentinelTemplate": "(do (println \"%s\") (flush))",
+      "fileExtension": ".clj",
+      "inputBufferTemplate": "(System/setProperty \"WEAVE_INPUT\" (String. (.decode (java.util.Base64/getDecoder) (.getBytes \"%s\" \"UTF-8\")) \"UTF-8\"))"
+    },
+    "clj": {
+      "lspCommand": ["clojure-lsp"],
+      "runnerCommand": ["clojure", "-M"],
+      "sentinelTemplate": "(do (println \"%s\") (flush))",
+      "fileExtension": ".clj",
+      "inputBufferTemplate": "(System/setProperty \"WEAVE_INPUT\" (String. (.decode (java.util.Base64/getDecoder) (.getBytes \"%s\" \"UTF-8\")) \"UTF-8\"))"
+    },
+    "lisp": {
+      "lspCommand": ["cl-lsp"],
+      "runnerCommand": ["sbcl", "--noinform", "--script"],
+      "sentinelTemplate": "(progn (format t \"~a~%%\" \"%s\") (finish-output))",
+      "fileExtension": ".lisp"
+    },
+    "cl": {
+      "lspCommand": ["cl-lsp"],
+      "runnerCommand": ["sbcl", "--noinform", "--script"],
+      "sentinelTemplate": "(progn (format t \"~a~%%\" \"%s\") (finish-output))",
+      "fileExtension": ".lisp"
+    },
+    "node": {
+      "lspCommand": ["typescript-language-server", "--stdio"],
+      "runnerCommand": ["node", "-i"],
+      "sentinelTemplate": "console.log(\"%s\")",
+      "fileExtension": ".js"
+    },
+    "js": {
+      "lspCommand": ["typescript-language-server", "--stdio"],
+      "runnerCommand": ["node", "-i"],
+      "sentinelTemplate": "console.log(\"%s\")",
+      "fileExtension": ".js"
+    },
+    "idris": {
+      "lspCommand": ["idris2-lsp"],
+      "runnerCommand": ["/home/kaygun/local/bin/idris2", "--source-dir", "/", "--exec", "main"],
+      "sentinelTemplate": "putStrLn \"%s\"",
+      "fileExtension": ".idr"
+    },
+    "idris2": {
+      "lspCommand": ["idris2-lsp"],
+      "runnerCommand": ["/home/kaygun/local/bin/idris2", "--source-dir", "/", "--exec", "main"],
+      "sentinelTemplate": "putStrLn \"%s\"",
+      "fileExtension": ".idr"
+    }
+  }
+}
