@@ -126,7 +126,7 @@ To render a stored buffer at a specific location in the document:
 
 ## Included Examples (`examples/`)
 
-1. **`examples/sample_pipeline.md`**: Multi-stage data pipeline passing raw JSON across Bash $\to$ Python $\to$ Clojure $\to$ Common Lisp.
+1. **`examples/sample_pipeline.md`**: Multi-stage data pipeline passing JSON results across Bash $\to$ Python $\to$ Clojure $\to$ Common Lisp.
 2. **`examples/linear_discriminant_analysis.md`**: Linear Discriminant Analysis (LDA) and statistical group classification in R.
 3. **`examples/centralizers.md`**: Group theory computations (permutation cycles & integer partitions) adapted from Atabey Kaygun's blog post.
 4. **`examples/boyer_moore_misra_gries.md`**: Streaming majority algorithms in Clojure.

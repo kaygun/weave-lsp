@@ -21,7 +21,7 @@ print(json.dumps(top_students))
 ```
 
 ## Step 3: Reuse Persistent State in Python
-```name:python_summary lang:python type:json output:hidden
+```name:python_summary input:processed_users lang:python type:json output:hidden
 # 'top_students' is available from Step 2
 avg_score = sum(u["score"] for u in top_students) / len(top_students)
 report = {
@@ -33,14 +33,14 @@ print(json.dumps(report))
 ```
 
 ## Step 4: Process Input Buffer in Clojure
-```name:clj_summary input:fetch_users lang:clojure type:json output:hidden
+```name:clj_summary input:python_summary lang:clojure type:json output:hidden
 ;; Read piped input buffer from WEAVE_INPUT system property or env var
 (let [raw-input (or (System/getProperty "WEAVE_INPUT") (System/getenv "WEAVE_INPUT"))]
   (println (str "{\"clojure_status\": \"ok\", \"input_length\": " (count (or raw-input "")) "}")))
 ```
 
 ## Step 5: Process Data in Common Lisp
-```name:lisp_summary input:fetch_users lang:lisp type:json output:hidden
+```name:lisp_summary input:clj_summary lang:lisp type:json output:hidden
 ;; Common Lisp execution with SBCL
 (let ((raw-input (sb-ext:posix-getenv "WEAVE_INPUT")))
   (format t "{\"lisp_status\": \"ok\", \"engine\": \"sbcl\", \"bytes_received\": ~a}" (length (or raw-input ""))))
@@ -48,7 +48,11 @@ print(json.dumps(report))
 
 ## Step 6: Render Outputs via Dedicated Display Blocks
 
-### Python Processed Report
+### Python Filtered Users
+```render:processed_users type:json
+```
+
+### Python Summary Report
 ```render:python_summary type:json
 ```
 

@@ -53,7 +53,24 @@ print(json.dumps(report))
 
 ## Step 6: Render Outputs via Dedicated Display Blocks
 
-### Python Processed Report
+### Python Filtered Users
+```json
+[
+  {
+    "id": 1,
+    "name": "Alice",
+    "score": 85
+  },
+  {
+    "id": 2,
+    "name": "Bob",
+    "score": 92
+  }
+]
+```
+
+
+### Python Summary Report
 ```json
 {
   "total_top_students": 2,
@@ -70,7 +87,7 @@ print(json.dumps(report))
 ```json
 {
   "clojure_status": "ok",
-  "input_length": 123
+  "input_length": 75
 }
 ```
 
@@ -80,6 +97,6 @@ print(json.dumps(report))
 {
   "lisp_status": "ok",
   "engine": "sbcl",
-  "bytes_received": 123
+  "bytes_received": 44
 }
 ```
