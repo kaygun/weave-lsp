@@ -83,12 +83,3 @@ The partitions above correspond to the following permutations:
 
 $$(12345), (1234)(5), (123)(45), (123)(4)(5), (12)(34)(5), (12)(3)(4)(5), (1)(2)(3)(4)(5)$$
 
-## Results & Display Blocks
-
-### Permutation Cycles Output
-```render:lisp_cycles
-```
-
-### Integer Partitions Output
-```render:lisp_partitions
-```

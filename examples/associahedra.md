@@ -8,9 +8,9 @@ The number of different parenthesizations of $n+1$ terms is given by the $n$-th 
 
 ## Implementation
 
-Let us start with implementing binary trees:
+Let us start with implementing binary trees and printing all full binary trees as fully parenthesized expressions for $n=4$ terms:
 
-```name:scala_associahedra lang:scala code:visible output:hidden
+```name:scala_associahedra lang:scala code:visible output:visible
 sealed trait Expr
 case class Leaf(label: Int) extends Expr
 case class Node(left: Expr, right: Expr) extends Expr
@@ -25,12 +25,4 @@ def generateParenthesizations(n: Int): List[Expr] = {
 }
 
 generateParenthesizations(4).foreach(println)
-```
-
-Next, we generate all full binary trees as fully parenthesized expressions and print each tree for $n=4$ terms.
-
-## Results & Display Blocks
-
-### Associahedra Parenthesizations Output
-```render:scala_associahedra
 ```

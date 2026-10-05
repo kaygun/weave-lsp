@@ -41,13 +41,27 @@ class GenericProcessSession(
         else history + String.format(spec.sentinelTemplate, marker) + "\n" + preparedCode
       Files.writeString(sessionFile, source)
 
-      val cmd = spec.runnerCommand :+ sessionFile.toString
+      val resolvedRunner = spec.runnerCommand match
+        case head :: tail if !head.contains("/") =>
+          val home = System.getProperty("user.home")
+          val candidateDirs = (Option(System.getenv("PATH")).getOrElse("").split(":").toList ++ List(s"$home/local/bin", s"$home/.local/bin")).distinct
+          val found = candidateDirs.map(d => java.nio.file.Paths.get(d, head)).find(p => java.nio.file.Files.isExecutable(p))
+          found.map(_.toString).getOrElse(head) :: tail
+        case other => other
+      val cmd = resolvedRunner :+ sessionFile.toString
       val stdoutFile = Files.createTempFile("weave-stdout-", ".txt")
       val stderrFile = Files.createTempFile("weave-stderr-", ".txt")
       var process: Option[Process] = None
       try
         val pb = new java.lang.ProcessBuilder(cmd*)
         workingDir.foreach(dir => pb.directory(dir.toFile))
+        val home = System.getProperty("user.home")
+        val extraBins = List(s"$home/local/bin", s"$home/.local/bin")
+        val currentPath = Option(pb.environment().get("PATH")).getOrElse("")
+        val pathEntries = currentPath.split(":").toSet
+        val toAdd = extraBins.filter(b => java.nio.file.Files.isDirectory(java.nio.file.Paths.get(b)) && !pathEntries.contains(b))
+        if toAdd.nonEmpty then
+          pb.environment().put("PATH", (toAdd :+ currentPath).mkString(":"))
         pb.redirectOutput(stdoutFile.toFile)
         pb.redirectError(stderrFile.toFile)
         pb.environment().remove("WEAVE_INPUT")

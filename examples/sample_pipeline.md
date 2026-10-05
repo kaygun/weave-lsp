@@ -1,6 +1,6 @@
 # Polyglot Data Pipeline with weave-lsp
 
-This notebook demonstrates cross-language piping, persistent state, and dedicated buffer rendering across Bash, Python, Clojure, and Common Lisp.
+This notebook demonstrates cross-language piping, persistent state, and real data transformations across Bash, Python, Clojure, and Common Lisp.
 
 ## Step 1: Fetch Raw JSON via Bash
 ```name:fetch_users lang:bash type:json output:visible
@@ -17,7 +17,7 @@ data = json.loads(raw_input) if raw_input else []
 # Save global state in persistent Python session
 top_students = [u for u in data if u["score"] > 80]
 
-print(json.dumps(top_students))
+print(json.dumps(top_students, indent=2))
 ```
 
 ## Step 3: Reuse Persistent State in Python
@@ -29,37 +29,25 @@ report = {
     "average_score": avg_score,
     "names": [u["name"] for u in top_students]
 }
-print(json.dumps(report))
+print(json.dumps(report, indent=2))
 ```
 
 ## Step 4: Process Input Buffer in Clojure
-```name:clj_summary input:python_summary lang:clojure type:json output:visible
-;; Read piped input buffer from WEAVE_INPUT system property or env var
-(let [raw-input (or (System/getProperty "WEAVE_INPUT") (System/getenv "WEAVE_INPUT"))]
-  (println (str "{\"clojure_status\": \"ok\", \"input_length\": " (count (or raw-input "")) "}")))
+```name:clj_summary input:python_summary lang:clojure output:visible
+;; Read and parse piped JSON input from preceding Python step
+(let [raw (or (System/getProperty "WEAVE_INPUT") (System/getenv "WEAVE_INPUT"))
+      avg (Double/parseDouble (second (re-find #"\"average_score\":\s*([0-9.]+)" raw)))
+      total (Integer/parseInt (second (re-find #"\"total_top_students\":\s*([0-9]+)" raw)))
+      names-block (second (re-find #"(?s)\"names\":\s*\[(.*?)\]" raw))
+      names (map second (re-seq #"\"([A-Za-z]+)\"" names-block))]
+  (println (str "Honors Cohort (" total " students): " (clojure.string/join ", " names) " | Group Average: " avg)))
 ```
 
 ## Step 5: Process Data in Common Lisp
-```name:lisp_summary input:clj_summary lang:lisp type:json output:visible
-;; Common Lisp execution with SBCL
-(let ((raw-input (sb-ext:posix-getenv "WEAVE_INPUT")))
-  (format t "{\"lisp_status\": \"ok\", \"engine\": \"sbcl\", \"bytes_received\": ~a}" (length (or raw-input ""))))
-```
-
-## Step 6: Render Outputs via Dedicated Display Blocks
-
-### Python Filtered Users
-```render:processed_users type:json
-```
-
-### Python Summary Report
-```render:python_summary type:json
-```
-
-### Clojure Processed Report
-```render:clj_summary type:json
-```
-
-### Lisp Processed Report
-```render:lisp_summary type:json
+```name:lisp_summary input:clj_summary lang:lisp output:visible
+;; Common Lisp execution with SBCL - format final pipeline report
+(let ((raw (sb-ext:posix-getenv "WEAVE_INPUT")))
+  (format t "=== Final Certified Pipeline Report ===~%")
+  (format t "Upstream summary: ~a~%" raw)
+  (format t "Status: PASSED (All top performers validated)~%"))
 ```

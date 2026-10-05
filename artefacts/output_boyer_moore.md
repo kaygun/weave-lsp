@@ -14,6 +14,11 @@ First, we generate the stream of data points via Bash:
 echo '[0, 1, 1, 0, 2, 2, 2, 0, 0, 0, 1, 0, 2, 0]'
 ```
 
+> **Output [stream_data]**
+```plaintext
+[0, 1, 1, 0, 2, 2, 2, 0, 0, 0, 1, 0, 2, 0]
+```
+
 
 ## An Implementation of Boyer-Moore in Clojure
 
@@ -32,6 +37,11 @@ Here is the implementation of the Boyer-Moore majority algorithm:
 (let [raw-input (or (System/getProperty "WEAVE_INPUT") (System/getenv "WEAVE_INPUT"))
       data (if raw-input (read-string raw-input) [0 1 1 0 2 2 2 0 0 0 1 0 2 0])]
   (println (boyer-moore data)))
+```
+
+> **Output [boyer_moore_res]**
+```plaintext
+2
 ```
 
 
@@ -59,16 +69,8 @@ There is an extension of the Boyer-Moore majority algorithm by [Misra and Gries]
   (println (vec (misra-gries data 2))))
 ```
 
-
-## Execution Results
-
-### Boyer-Moore Majority Result
-```plaintext
-2
-```
-
-
-### Misra-Gries Frequent Candidates Result
+> **Output [misra_gries_res]**
 ```plaintext
 [0 2]
 ```
+

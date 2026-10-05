@@ -8,9 +8,11 @@ Linear Discriminant Analysis (LDA) is a generalization of Fisher's linear discri
 
 ## Implementation in R
 
-We construct a multi-class dataset and compute class statistics and group means:
+We construct a multi-class dataset and compute the linear discriminant projection and classification table using `MASS::lda`:
 
-```name:r_lda_analysis lang:r code:visible output:hidden
+```name:r_lda_analysis lang:r code:visible output:visible
+library(MASS)
+
 # Set reproducible seed
 set.seed(42)
 
@@ -25,13 +27,13 @@ df <- data.frame(
   group = factor(rep(c("A", "B", "C"), each = 30))
 )
 
-# Compute group means
-means <- aggregate(. ~ group, data = df, FUN = mean)
-print(means)
-```
+# Fit Linear Discriminant Analysis model
+model <- lda(group ~ x + y, data = df)
+cat("=== Linear Discriminants Scaling Matrix ===\n")
+print(model$scaling)
 
-## Results & Display Blocks
-
-### R LDA Group Means Output
-```render:r_lda_analysis
+# Compute classification predictions
+pred <- predict(model, df)
+cat("\n=== Confusion Matrix (Actual vs Predicted) ===\n")
+print(table(Actual = df$group, Predicted = pred$class))
 ```

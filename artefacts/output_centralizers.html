@@ -95,16 +95,3 @@ The partitions above correspond to the following permutations:
 
 $$(12345), (1234)(5), (123)(45), (123)(4)(5), (12)(34)(5), (12)(3)(4)(5), (1)(2)(3)(4)(5)$$
 
-## Results & Display Blocks
-
-### Permutation Cycles Output
-```plaintext
-(2 3 1 5 6 4 8 7 9 10)
-```
-
-
-### Integer Partitions Output
-```plaintext
-((5) (4 1) (3 2) (3 1 1) (2 2 1) (2 1 1 1) (1 1 1 1 1))
-```
-

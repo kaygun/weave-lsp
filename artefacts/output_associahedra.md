@@ -8,7 +8,7 @@ The number of different parenthesizations of $n+1$ terms is given by the $n$-th 
 
 ## Implementation
 
-Let us start with implementing binary trees:
+Let us start with implementing binary trees and printing all full binary trees as fully parenthesized expressions for $n=4$ terms:
 
 ```scala
 sealed trait Expr
@@ -27,12 +27,7 @@ def generateParenthesizations(n: Int): List[Expr] = {
 generateParenthesizations(4).foreach(println)
 ```
 
-
-Next, we generate all full binary trees as fully parenthesized expressions and print each tree for $n=4$ terms.
-
-## Results & Display Blocks
-
-### Associahedra Parenthesizations Output
+> **Output [scala_associahedra]**
 ```plaintext
 Node(Leaf(0),Node(Leaf(0),Node(Leaf(0),Leaf(0))))
 Node(Leaf(0),Node(Node(Leaf(0),Leaf(0)),Leaf(0)))
@@ -40,3 +35,4 @@ Node(Node(Leaf(0),Leaf(0)),Node(Leaf(0),Leaf(0)))
 Node(Node(Leaf(0),Node(Leaf(0),Leaf(0))),Leaf(0))
 Node(Node(Node(Leaf(0),Leaf(0)),Leaf(0)),Leaf(0))
 ```
+

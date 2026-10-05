@@ -10,7 +10,7 @@ Earlier I explained the mathematical theory behind counting isomorphism classes 
 
 Scala does not have a framework/library to implement general memoization out-of-the-box, but you can hand-roll one using a memoized fixed-point combinator:
 
-```name:scala_graph_counting lang:scala code:visible output:hidden
+```name:scala_graph_counting lang:scala code:visible output:visible
 import scala.collection.mutable
 
 def memoFix[A, B](f: (A => B) => A => B): A => B = {
@@ -46,50 +46,28 @@ Now, for the large interesting examples:
 
 ### OEIS A001205: Number of 2-regular graphs on $n$ vertices ($n=3..7$)
 
-```name:seq_2regular lang:scala code:visible output:hidden
+```name:seq_2regular lang:scala code:visible output:visible
 val seq2 = (3 to 7).map(n => graphCount(List.fill(n)(2)))
 println(seq2.toVector)
 ```
 
 ### OEIS A002829: Number of 3-regular graphs on $2n$ vertices ($n=2..5$)
 
-```name:seq_3regular lang:scala code:visible output:hidden
+```name:seq_3regular lang:scala code:visible output:visible
 val seq3 = (2 to 5).map(n => graphCount(List.fill(2 * n)(3)))
 println(seq3.toVector)
 ```
 
 ### OEIS A005815: Number of 4-regular graphs on $n$ vertices ($n=5..8$)
 
-```name:seq_4regular lang:scala code:visible output:hidden
+```name:seq_4regular lang:scala code:visible output:visible
 val seq4 = (5 to 8).map(n => graphCount(List.fill(n)(4)))
 println(seq4.toVector)
 ```
 
 ### OEIS A338978: Number of 5-regular graphs on $2n$ vertices ($n=3..5$)
 
-```name:seq_5regular lang:scala code:visible output:hidden
+```name:seq_5regular lang:scala code:visible output:visible
 val seq5 = (3 to 5).map(n => graphCount(List.fill(2 * n)(5)))
 println(seq5.toVector)
-```
-
-## Results & Display Blocks
-
-### Base Degree Sequences Output
-```render:scala_graph_counting
-```
-
-### 2-Regular Graphs Sequence (A001205)
-```render:seq_2regular
-```
-
-### 3-Regular Graphs Sequence (A002829)
-```render:seq_3regular
-```
-
-### 4-Regular Graphs Sequence (A005815)
-```render:seq_4regular
-```
-
-### 5-Regular Graphs Sequence (A338978)
-```render:seq_5regular
 ```

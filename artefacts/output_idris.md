@@ -69,10 +69,8 @@ main : IO ()
 main = putStrLn "Proof verified: comm (a: Nat) (b: Nat) -> plus a b = plus b a"
 ```
 
-
-## Proof Execution Result
-
-### Verified Commutativity Result
+> **Output [idris_nat_proof]**
 ```plaintext
 Proof verified: comm (a: Nat) (b: Nat) -> plus a b = plus b a
 ```
+

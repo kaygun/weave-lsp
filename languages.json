@@ -44,7 +44,7 @@
     },
     "idris": {
       "lspCommand": ["idris2-lsp"],
-      "runnerCommand": ["idris2", "--source-dir", "/", "--exec", "main"],
+      "runnerCommand": ["idris2", "--source-dir", "/tmp", "--exec", "main"],
       "sentinelTemplate": "putStrLn \"%s\"",
       "fileExtension": ".idr",
       "replayPreviousCells": false

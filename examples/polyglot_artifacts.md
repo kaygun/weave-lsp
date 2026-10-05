@@ -10,10 +10,13 @@ Today, I am going to write something that I have been playing around with, and f
 
 Here, Python calculates wave function metrics, writes a vector image artifact (`artefacts/sine_wave.svg`), and outputs a dataset file (`artefacts/metrics.json`):
 
-```name:python_artifacts lang:python code:visible output:hidden
+```name:python_artifacts lang:python type:json code:visible output:visible
 import math, json, os
 
-os.makedirs("artefacts", exist_ok=True)
+output_dir = "artefacts" if os.path.isdir("artefacts") else "../artefacts"
+os.makedirs(output_dir, exist_ok=True)
+svg_file = os.path.join(output_dir, "sine_wave.svg")
+metrics_file = os.path.join(output_dir, "metrics.json")
 
 # Generate data points
 x_vals = [i * 0.1 for i in range(50)]
@@ -25,7 +28,7 @@ svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="400" height="20
   <text x="20" y="30" fill="#cdd6f4" font-family="sans-serif" font-size="14">weave-lsp Polyglot Wave</text>
 </svg>'''
 
-with open("artefacts/sine_wave.svg", "w") as f:
+with open(svg_file, "w") as f:
     f.write(svg_content)
 
 metrics = {
@@ -35,46 +38,40 @@ metrics = {
     "image_artifact": "artefacts/sine_wave.svg"
 }
 
-with open("artefacts/metrics.json", "w") as f:
+with open(metrics_file, "w") as f:
     json.dump(metrics, f, indent=2)
 
-print(json.dumps(metrics))
+print(json.dumps(metrics, indent=2))
 ```
 
 ## Step 2: Read and Summarize Artifact File in Clojure
 
 Next, a Clojure cell consumes the piped input buffer and reads the generated `artefacts/metrics.json` file directly from the filesystem:
 
-```name:clj_artifact_summary input:python_artifacts lang:clojure code:visible output:hidden
-(let [raw-input (or (System/getProperty "WEAVE_INPUT") (System/getenv "WEAVE_INPUT"))
-      file-content (slurp "artefacts/metrics.json")]
-  (println (str "Read artefacts/metrics.json (" (count file-content) " bytes)")))
+```name:clj_artifact_summary input:python_artifacts lang:clojure code:visible output:visible
+(let [metrics-path (if (.exists (java.io.File. "artefacts/metrics.json")) "artefacts/metrics.json" "../artefacts/metrics.json")
+      content (slurp metrics-path)
+      points (second (re-find #"\"points_count\":\s*([0-9]+)" content))
+      min-val (second (re-find #"\"min_val\":\s*([-\d.]+)" content))
+      max-val (second (re-find #"\"max_val\":\s*([-\d.]+)" content))
+      img (second (re-find #"\"image_artifact\":\s*\"([^\"]+)\"" content))]
+  (println (str "Clojure parsed " points " waveform data points in range [" min-val ", " max-val "] linked to " img)))
 ```
 
 ## Step 3: Read and Analyze Artifact File in Common Lisp
 
 A Common Lisp cell also accesses the generated artifact file:
 
-```name:lisp_artifact_summary input:python_artifacts lang:lisp code:visible output:hidden
-(let ((raw-input (sb-ext:posix-getenv "WEAVE_INPUT")))
-  (with-open-file (stream "artefacts/metrics.json")
-    (let ((file-bytes (file-length stream)))
-      (format t "Read artefacts/metrics.json (~a bytes)~%" file-bytes))))
+```name:lisp_artifact_summary input:python_artifacts lang:lisp code:visible output:visible
+(let* ((p1 "artefacts/metrics.json")
+       (p2 "../artefacts/metrics.json")
+       (path (if (probe-file p1) p1 p2)))
+  (with-open-file (stream path)
+    (format t "Common Lisp artifact inspection:~%")
+    (loop for line = (read-line stream nil nil)
+          while line do (format t "  ~a~%" line))))
 ```
 
-## Step 4: Render Display Blocks & Embedded Image Artifact
+## Step 4: Embedded Image Artifact
 
-### Generated Image Plot
 ![Polyglot Sine Wave](sine_wave.svg)
-
-### Python Generated Dataset Summary
-```render:python_artifacts type:json
-```
-
-### Clojure Artifact Processing Report
-```render:clj_artifact_summary
-```
-
-### Common Lisp Artifact Processing Report
-```render:lisp_artifact_summary
-```

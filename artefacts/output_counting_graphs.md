@@ -40,6 +40,13 @@ println(graphCount(List(1, 1, 2, 2, 2)))
 println(graphCount(List(2, 2, 2, 2, 2)))
 ```
 
+> **Output [scala_graph_counting]**
+```plaintext
+1
+7
+12
+```
+
 
 ## Large Examples & Regular Graph Sequences
 
@@ -52,12 +59,22 @@ val seq2 = (3 to 7).map(n => graphCount(List.fill(n)(2)))
 println(seq2.toVector)
 ```
 
+> **Output [seq_2regular]**
+```plaintext
+Vector(1, 3, 12, 70, 465)
+```
+
 
 ### OEIS A002829: Number of 3-regular graphs on $2n$ vertices ($n=2..5$)
 
 ```scala
 val seq3 = (2 to 5).map(n => graphCount(List.fill(2 * n)(3)))
 println(seq3.toVector)
+```
+
+> **Output [seq_3regular]**
+```plaintext
+Vector(1, 70, 19355, 11180820)
 ```
 
 
@@ -68,6 +85,11 @@ val seq4 = (5 to 8).map(n => graphCount(List.fill(n)(4)))
 println(seq4.toVector)
 ```
 
+> **Output [seq_4regular]**
+```plaintext
+Vector(1, 15, 465, 19355)
+```
+
 
 ### OEIS A338978: Number of 5-regular graphs on $2n$ vertices ($n=3..5$)
 
@@ -76,36 +98,8 @@ val seq5 = (3 to 5).map(n => graphCount(List.fill(2 * n)(5)))
 println(seq5.toVector)
 ```
 
-
-## Results & Display Blocks
-
-### Base Degree Sequences Output
-```plaintext
-1
-7
-12
-```
-
-
-### 2-Regular Graphs Sequence (A001205)
-```plaintext
-Vector(1, 3, 12, 70, 465)
-```
-
-
-### 3-Regular Graphs Sequence (A002829)
-```plaintext
-Vector(1, 70, 19355, 11180820)
-```
-
-
-### 4-Regular Graphs Sequence (A005815)
-```plaintext
-Vector(1, 15, 465, 19355)
-```
-
-
-### 5-Regular Graphs Sequence (A338978)
+> **Output [seq_5regular]**
 ```plaintext
 Vector(1, 3507, 66462606)
 ```
+

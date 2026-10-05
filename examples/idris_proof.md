@@ -46,7 +46,7 @@ The next lemma is **unloop**, about the fact that $(n+1)+m = n+(m+1)$, or $\text
 
 Then the rest is recursion on the second argument to prove **commutativity**: $\text{plus } a\ b = \text{plus } b\ a$.
 
-```name:idris_nat_proof lang:idris code:visible output:hidden
+```name:idris_nat_proof lang:idris code:visible output:visible
 module Main
 
 -- Unitality Lemma: plus a Z = a
@@ -66,10 +66,4 @@ comm (S k) b = rewrite comm k b in rewrite unloop b k in Refl
 
 main : IO ()
 main = putStrLn "Proof verified: comm (a: Nat) (b: Nat) -> plus a b = plus b a"
-```
-
-## Proof Execution Result
-
-### Verified Commutativity Result
-```render:idris_nat_proof
 ```

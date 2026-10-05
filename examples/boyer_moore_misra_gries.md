@@ -10,7 +10,7 @@ The [Boyer–Moore majority algorithm](https://en.wikipedia.org/wiki/Boyer%E2%80
 
 First, we generate the stream of data points via Bash:
 
-```name:stream_data lang:bash output:hidden
+```name:stream_data lang:bash output:visible
 echo '[0, 1, 1, 0, 2, 2, 2, 0, 0, 0, 1, 0, 2, 0]'
 ```
 
@@ -18,7 +18,7 @@ echo '[0, 1, 1, 0, 2, 2, 2, 0, 0, 0, 1, 0, 2, 0]'
 
 Here is the implementation of the Boyer-Moore majority algorithm:
 
-```name:boyer_moore_res input:stream_data lang:clojure code:visible output:hidden
+```name:boyer_moore_res input:stream_data lang:clojure code:visible output:visible
 (defn boyer-moore [xs]
   (loop [ys xs
          count 0
@@ -37,7 +37,7 @@ Here is the implementation of the Boyer-Moore majority algorithm:
 
 There is an extension of the Boyer-Moore majority algorithm by [Misra and Gries](https://people.csail.mit.edu/rrw/6.045-2019/encalgs-mg.pdf). I'll implement that too:
 
-```name:misra_gries_res input:stream_data lang:clojure code:visible output:hidden
+```name:misra_gries_res input:stream_data lang:clojure code:visible output:visible
 (defn misra-gries [xs k]
   (loop [ys xs
          counts {}]
@@ -55,14 +55,4 @@ There is an extension of the Boyer-Moore majority algorithm by [Misra and Gries]
 (let [raw-input (or (System/getProperty "WEAVE_INPUT") (System/getenv "WEAVE_INPUT"))
       data (if raw-input (read-string raw-input) [0 1 1 0 2 2 2 0 0 0 1 0 2 0])]
   (println (vec (misra-gries data 2))))
-```
-
-## Execution Results
-
-### Boyer-Moore Majority Result
-```render:boyer_moore_res
-```
-
-### Misra-Gries Frequent Candidates Result
-```render:misra_gries_res
 ```
