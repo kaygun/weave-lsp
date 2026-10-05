@@ -45,6 +45,11 @@ So, here is a simple way of writing a unique representative permutation correspo
 (format t "~a~%" (permutation '(3 3 2 1 1)))
 ```
 
+> **Output [lisp_cycles]**
+```plaintext
+(2 3 1 5 6 4 8 7 9 10)
+```
+
 
 Note that I am not using the cycle representation, but the original representation of a permutation as a specific ordering of numbers from $1$ to $n$.
 
@@ -80,6 +85,11 @@ Luckily, I wrote about partitions before. The function below returns all possibl
 (format t "~a~%" (partitions 5))
 ```
 
+> **Output [lisp_partitions]**
+```plaintext
+((5) (4 1) (3 2) (3 1 1) (2 2 1) (2 1 1 1) (1 1 1 1 1))
+```
+
 
 The partitions above correspond to the following permutations:
 
@@ -97,3 +107,4 @@ $$(12345), (1234)(5), (123)(45), (123)(4)(5), (12)(34)(5), (12)(3)(4)(5), (1)(2)
 ```plaintext
 ((5) (4 1) (3 2) (3 1 1) (2 2 1) (2 1 1 1) (1 1 1 1 1))
 ```
+

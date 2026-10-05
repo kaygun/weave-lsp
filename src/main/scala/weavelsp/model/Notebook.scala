@@ -6,7 +6,9 @@ enum Visibility:
 object Visibility:
   def parse(str: String): Visibility = str.toLowerCase match
     case "hidden" | "false" | "hide" => Visibility.Hidden
-    case _                           => Visibility.Visible
+    case "visible" | "true" | "show" => Visibility.Visible
+    case other =>
+      throw new IllegalArgumentException(s"Invalid visibility '$other'; expected 'visible' or 'hidden'")
 
 case class BlockAttributes(
   name: Option[String] = None,
@@ -15,6 +17,8 @@ case class BlockAttributes(
   contentType: ContentType = ContentType.PlainText,
   codeVisibility: Visibility = Visibility.Visible,
   outputVisibility: Visibility = Visibility.Visible,
+  eval: Option[Boolean] = None,
+  replay: Option[Boolean] = None,
   outputFile: Option[String] = None
 )
 

@@ -4,23 +4,27 @@ import weavelsp.model.*
 import weavelsp.runner.{GenericProcessSession, LanguageRegistry}
 import weavelsp.lsp.LspServerManager
 
+import java.nio.file.{Files, Path, Paths}
 import scala.collection.mutable
 import scala.util.Try
 
 class PipelineEngine(
   val registry: LanguageRegistry,
-  val lspManager: LspServerManager
+  val lspManager: LspServerManager,
+  val workingDir: Option[Path] = None,
+  val enableLsp: Boolean = true
 ):
 
   private val processSessions = mutable.Map[String, GenericProcessSession]()
+  private val accumulatedCodeByLang = mutable.Map[String, StringBuilder]()
 
   private def getOrCreateSession(lang: String): GenericProcessSession =
     val canonicalKey = registry.canonicalName(lang)
     processSessions.getOrElseUpdate(canonicalKey, {
       val spec = registry.getSpec(canonicalKey).getOrElse(
-        weavelsp.runner.LangSpec(Nil, List(canonicalKey), "echo \"%s\"", ".txt")
+        throw new IllegalArgumentException(s"No runner configured for language '$lang'")
       )
-      val session = new GenericProcessSession(canonicalKey, spec, registry)
+      val session = new GenericProcessSession(canonicalKey, spec, registry, workingDir)
       session.start()
       session
     })
@@ -28,31 +32,42 @@ class PipelineEngine(
   def executePipeline(doc: NotebookDocument, bufferStore: BufferStore): NotebookDocument =
     val plan = DependencyGraph.buildExecutionPlan(doc)
 
-    if plan.missingDependencies.nonEmpty then
-      println("[WARNING] Some input buffers are not produced by preceding cells:")
-      plan.missingDependencies.foreach { case (cellId, missingBufs) =>
-        println(s"  Cell '$cellId' requires missing buffer(s): ${missingBufs.mkString(", ")}")
-      }
+    val missing = plan.missingDependencies.toList.flatMap { (cellId, names) =>
+      names.filter(name => bufferStore.get(name).isEmpty).map(name => s"'$cellId' requires '$name'")
+    }
+    require(missing.isEmpty, s"Missing input buffers: ${missing.mkString(", ")}")
+    plan.orderedCodeCells.foreach { cell =>
+      val lang = cell.attributes.lang.getOrElse("bash")
+      require(registry.getSpec(lang).isDefined, s"No runner configured for language '$lang'")
+      require(cell.attributes.inputs.size <= 1,
+        s"Cell '${cell.attributes.name.getOrElse("unnamed")}' supports one input buffer; combine inputs in a preceding cell")
+    }
 
     val updatedCellsMap = mutable.Map[CodeCell, CodeCell]()
 
     plan.orderedCodeCells.foreach { cell =>
       val lang = cell.attributes.lang.getOrElse("bash")
       val canonicalLang = registry.canonicalName(lang)
+      val cellName = cell.attributes.name.getOrElse("unnamed")
 
-      // Notify LSP server of virtual document update
-      val ext = registry.getSpec(canonicalLang).map(_.fileExtension).getOrElse(".txt")
-      val virtualUri = s"file:///virtual_notebook/${cell.attributes.name.getOrElse("cell")}$ext"
-      lspManager.notifyCellUpdated(canonicalLang, virtualUri, cell.code)
+      // Language server connection stays open, carrying accumulated state across cells
+      if enableLsp then
+        val ext = registry.getSpec(canonicalLang).map(_.fileExtension).getOrElse(".txt")
+        val virtualUri = s"file:///virtual_notebook/$canonicalLang$ext"
+        val codeBuffer = accumulatedCodeByLang.getOrElseUpdate(canonicalLang, new StringBuilder())
+        if codeBuffer.nonEmpty then codeBuffer.append("\n\n")
+        codeBuffer.append(cell.code)
+        lspManager.notifyCellUpdated(canonicalLang, virtualUri, codeBuffer.toString())
 
       // Fetch input buffer if specified
       val primaryInputBuf = cell.attributes.inputs.headOption.flatMap(bufferStore.get)
 
       // Execute code via persistent session
       val session = getOrCreateSession(canonicalLang)
-      println(s"[EXEC] Running cell '${cell.attributes.name.getOrElse("unnamed")}' ($canonicalLang)...")
+      println(s"[EXEC] Running cell '$cellName' ($canonicalLang)...")
 
-      val execResult = session.eval(cell.code, primaryInputBuf)
+      val replayCell = cell.attributes.replay.getOrElse(true)
+      val execResult = session.eval(cell.code, primaryInputBuf, replayCell)
 
       execResult match
         case Right(outputStr) =>
@@ -65,13 +80,18 @@ class PipelineEngine(
             bufferStore.put(buf)
           }
 
+          // If outputFile attribute is specified, write output directly to file
+          cell.attributes.outputFile.foreach { relPath =>
+            val targetPath = workingDir.map(_.resolve(relPath)).getOrElse(Paths.get(relPath))
+            Option(targetPath.getParent).foreach(Files.createDirectories(_))
+            Files.writeString(targetPath, outputStr)
+          }
+
           val updatedCell = cell.copy(output = Some(outputStr), exitCode = 0)
           updatedCellsMap(cell) = updatedCell
 
         case Left(errMsg) =>
-          println(s"[ERROR] Execution failed for cell '${cell.attributes.name.getOrElse("unnamed")}': $errMsg")
-          val updatedCell = cell.copy(output = Some(s"ERROR: $errMsg"), exitCode = 1)
-          updatedCellsMap(cell) = updatedCell
+          throw new IllegalStateException(s"Execution failed for cell '$cellName': $errMsg")
     }
 
     val finalCells = doc.cells.map {
@@ -86,4 +106,5 @@ class PipelineEngine(
       Try(session.close())
     }
     processSessions.clear()
+    accumulatedCodeByLang.clear()
     lspManager.shutdownAll()

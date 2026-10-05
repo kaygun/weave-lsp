@@ -8,7 +8,7 @@ enum ContentType:
   case PlainText, Json, Xml
 
   def format(raw: String): String =
-    if raw.isBlank then ""
+    if raw.isBlank && this != ContentType.PlainText then ""
     else
       this match
         case ContentType.Json =>
@@ -24,9 +24,11 @@ enum ContentType:
 
 object ContentType:
   def parse(str: String): ContentType = str.toLowerCase match
-    case "json" => ContentType.Json
-    case "xml"  => ContentType.Xml
-    case _      => ContentType.PlainText
+    case "json"                       => ContentType.Json
+    case "xml"                        => ContentType.Xml
+    case "text" | "plaintext" | "txt" => ContentType.PlainText
+    case other =>
+      throw new IllegalArgumentException(s"Invalid content type '$other'; expected 'json', 'xml', or 'text'")
 
 case class DataBuffer(
   name: String,

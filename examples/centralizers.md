@@ -30,7 +30,7 @@ Note that the cycle $(123)$ can also be represented as $(231)$ or $(312)$ depend
 
 So, here is a simple way of writing a unique representative permutation corresponding to a specific shape:
 
-```name:lisp_cycles lang:lisp code:visible output:hidden
+```name:lisp_cycles lang:lisp code:visible output:visible
 (defun cycle (n &optional (shift 1))
   (append (loop for i from (1+ shift) below (+ n shift) collect i)
           (list shift)))
@@ -66,7 +66,7 @@ The shape is dictated by a partition of $5$. In this case $5=3+2$. Now, we have 
 
 Luckily, I wrote about partitions before. The function below returns all possible partitions of an integer unbound by its size:
 
-```name:lisp_partitions lang:lisp code:visible output:hidden
+```name:lisp_partitions lang:lisp code:visible output:visible
 (defun partitions (n &optional k)
   (cond
     ((null k) (loop for i from 1 to n append (partitions n i)))

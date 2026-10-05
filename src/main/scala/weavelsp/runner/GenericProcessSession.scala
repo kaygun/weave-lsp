@@ -1,75 +1,127 @@
 package weavelsp.runner
 
 import weavelsp.model.DataBuffer
-import java.nio.file.{Files, Path, Paths, StandardOpenOption}
-import java.util.Base64
+import java.nio.file.{Files, Path}
+import java.util.{Base64, UUID}
+import java.util.concurrent.TimeUnit
+import scala.jdk.CollectionConverters.*
 import scala.util.Try
 
+/** Reconstructs language state by replaying successful cells in a script. */
 class GenericProcessSession(
   val langName: String,
   val spec: LangSpec,
-  val registry: LanguageRegistry
+  val registry: LanguageRegistry,
+  val workingDir: Option[Path] = None
 ):
 
   private val canonicalLang = registry.canonicalName(langName)
   private val sessionFile: Path = Files.createTempFile(s"weave_session_${canonicalLang}_", spec.fileExtension)
-  private var lastInputBuffer: Option[DataBuffer] = None
-  private var lastLineCount: Int = 0
+  private var history = ""
+  private var previousInput: Option[DataBuffer] = None
 
   def start(): Unit = ()
 
-  def eval(code: String, inputBufferOpt: Option[DataBuffer]): Either[String, String] =
+  def eval(code: String, inputBufferOpt: Option[DataBuffer], replayCell: Boolean = true): Either[String, String] =
     Try {
-      if inputBufferOpt.isDefined then
-        lastInputBuffer = inputBufferOpt
+      // Some runtimes cannot change their environment from within a script. Do
+      // not silently replay their previous cells against a different input.
+      require(history.isEmpty || inputPreamble(inputBufferOpt).isDefined ||
+        previousInput.map(_.content) == inputBufferOpt.map(_.content),
+        s"$canonicalLang requires an inputBufferTemplate to replay cells with different inputs")
 
-      val activeBuffer = inputBufferOpt.orElse(lastInputBuffer)
-      val preparedCode = prepareCode(code, activeBuffer)
+      // Compile Python cells separately so valid future imports remain at the
+      // beginning of their compilation unit despite the input preamble.
+      val executableCode = if canonicalLang == "python" then
+        s"exec(compile(${ujson.write(code)}, ${ujson.write(sessionFile.toString)}, 'exec'), globals(), globals())"
+      else code
+      val preparedCode = inputPreamble(inputBufferOpt).getOrElse("") + executableCode + "\n\n"
+      val marker = s"__WEAVE_OUTPUT_${UUID.randomUUID().toString.replace("-", "")}__"
+      val source = if history.isEmpty then preparedCode
+        else history + String.format(spec.sentinelTemplate, marker) + "\n" + preparedCode
+      Files.writeString(sessionFile, source)
 
-      // Append cell code directly to cumulative session file
-      Files.writeString(sessionFile, preparedCode + "\n\n", StandardOpenOption.APPEND)
+      val cmd = spec.runnerCommand :+ sessionFile.toString
+      val stdoutFile = Files.createTempFile("weave-stdout-", ".txt")
+      val stderrFile = Files.createTempFile("weave-stderr-", ".txt")
+      var process: Option[Process] = None
+      try
+        val pb = new java.lang.ProcessBuilder(cmd*)
+        workingDir.foreach(dir => pb.directory(dir.toFile))
+        pb.redirectOutput(stdoutFile.toFile)
+        pb.redirectError(stderrFile.toFile)
+        pb.environment().remove("WEAVE_INPUT")
+        inputBufferOpt.foreach(buf => pb.environment().put("WEAVE_INPUT", buf.content))
+        val proc = pb.start()
+        process = Some(proc)
+        proc.getOutputStream.close()
+        if !proc.waitFor(spec.timeoutMillis, TimeUnit.MILLISECONDS) then
+          throw new IllegalStateException(s"$canonicalLang execution timed out after ${spec.timeoutMillis} ms")
 
-      val cmd = if spec.runnerCommand.nonEmpty then
-        spec.runnerCommand :+ sessionFile.toString
-      else
-        List(canonicalLang, sessionFile.toString)
+        val stdout = Files.readString(stdoutFile)
+        val stderr = Files.readString(stderrFile)
+        if proc.exitValue() != 0 then
+          val detail = if stderr.nonEmpty then stderr else stdout
+          throw new IllegalStateException(s"$canonicalLang exited with code ${proc.exitValue()}: ${detail.trim}")
+        if stderr.nonEmpty then Console.err.print(stderr)
 
-      val pb = new java.lang.ProcessBuilder(cmd*)
-      pb.redirectErrorStream(true)
+        val output = if history.isEmpty then stdout else
+          val boundary = stdout.indexOf(marker)
+          require(boundary >= 0, s"$canonicalLang did not emit the cell output boundary")
+          stdout.substring(boundary + marker.length).stripPrefix("\r\n").stripPrefix("\n")
 
-      activeBuffer.foreach { buf =>
-        pb.environment().put("WEAVE_INPUT", buf.content)
+        if spec.replayPreviousCells && replayCell then history += preparedCode
+        previousInput = inputBufferOpt
+        output
+      finally
+        process.filter(_.isAlive).foreach { proc =>
+          val descendants = proc.descendants()
+          try descendants.iterator().asScala.toList.reverse.foreach(_.destroyForcibly())
+          finally descendants.close()
+          proc.destroyForcibly()
+          proc.waitFor(1, TimeUnit.SECONDS)
+        }
+        Files.deleteIfExists(stdoutFile)
+        Files.deleteIfExists(stderrFile)
+    }.toEither.left.map(ex => Option(ex.getMessage).getOrElse(ex.toString))
+
+  /** Bind the input separately for every cell, including replayed cells. */
+  private def inputPreamble(input: Option[DataBuffer]): Option[String] =
+    val content = input.map(_.content)
+    val literal = ujson.write(content.getOrElse(""))
+    val builtIn = canonicalLang match
+      case "python" =>
+        Some("import os as __weave_os\n" + content.fold(
+          "__weave_os.environ.pop('WEAVE_INPUT', None)\n")(
+          _ => s"__weave_os.environ['WEAVE_INPUT'] = $literal\n"))
+      case "bash" =>
+        Some(content.fold("unset WEAVE_INPUT\n")(value =>
+          "export WEAVE_INPUT='" + value.replace("'", "'\"'\"'") + "'\n"))
+      case "node" =>
+        Some(content.fold("delete process.env.WEAVE_INPUT;\n")(
+          _ => s"process.env.WEAVE_INPUT = $literal;\n"))
+      case "r" =>
+        Some(content.fold("Sys.unsetenv('WEAVE_INPUT')\n")(
+          _ => s"Sys.setenv(WEAVE_INPUT = $literal)\n"))
+      case "clojure" =>
+        Some(content.fold("(System/clearProperty \"WEAVE_INPUT\")\n")(
+          _ => s"(System/setProperty \"WEAVE_INPUT\" $literal)\n"))
+      case "lisp" =>
+        val binding = content.fold("(sb-posix:unsetenv \"WEAVE_INPUT\")\n") { value =>
+          val escaped = value.replace("\\", "\\\\").replace("\"", "\\\"")
+          s"(sb-posix:setenv \"WEAVE_INPUT\" \"$escaped\" 1)\n"
+        }
+        Some("(require :sb-posix)\n" + binding)
+      case _ => None
+
+    val configured = spec.inputBufferTemplate.flatMap { template =>
+      content.map { text =>
+        val encoded = Base64.getEncoder.encodeToString(text.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+        String.format(template, encoded) + "\n"
       }
-
-      val proc = pb.start()
-      
-      // Close process stdin immediately so script runners don't block
-      Try(proc.getOutputStream.close())
-
-      val stdout = new String(proc.getInputStream.readAllBytes(), "UTF-8")
-      proc.waitFor()
-
-      val rawLines = stdout.split("\r?\n")
-      val contentLines = rawLines.filterNot(isNoiseLine)
-
-      val newLines = contentLines.drop(lastLineCount)
-      lastLineCount = contentLines.length
-
-      newLines.mkString("\n").trim
-    }.toEither.left.map(_.getMessage)
-
-  private def prepareCode(code: String, activeBuffer: Option[DataBuffer]): String =
-    activeBuffer.flatMap { buf =>
-      spec.inputBufferTemplate.map { template =>
-        val b64Buf = Base64.getEncoder.encodeToString(buf.content.getBytes("UTF-8"))
-        val preamble = String.format(template, b64Buf)
-        s"$preamble\n$code"
-      }
-    }.getOrElse(code)
-
-  private def isNoiseLine(line: String): Boolean =
-    val t = line.trim
-    t.startsWith(">>>") || t.startsWith("user=>") || t.isEmpty
+    }
+    if builtIn.isDefined || configured.isDefined then Some(builtIn.getOrElse("") + configured.getOrElse(""))
+    else None
 
   def close(): Unit =
-    Try(Files.deleteIfExists(sessionFile))
+    Files.deleteIfExists(sessionFile)

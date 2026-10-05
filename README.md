@@ -1,21 +1,21 @@
 # weave-lsp
 
-> **Polyglot Markdown Notebook Engine with Cross-Language Unix Data Piping & Real-Time LSP Integration**
+> **Polyglot Markdown Notebook Engine with Cross-Language Data Buffers & LSP Connections**
 
-`weave-lsp` is a lightweight, extensible Scala 3 notebook processor that transforms standard Markdown files into executable polyglot pipelines. Code cells written in different programming languages—such as Bash, Python, R, Clojure, Common Lisp, Scala, and Idris 2—can execute statefully, pipe data buffers seamlessly across language boundaries, and validate syntax live via Language Server Protocol (LSP) connections.
+`weave-lsp` is a Scala 3 notebook processor that transforms Markdown files into executable polyglot pipelines. Named code cells produce text buffers that downstream cells can read through `WEAVE_INPUT`. Optional Language Server Protocol (LSP) connections receive cell contents; diagnostics are not currently displayed.
 
 ---
 
 ## Key Features
 
-- **Polyglot Stateful Execution**: Run cells across Bash, Python, R, Clojure, Common Lisp (SBCL), Scala, Idris 2, and Node.js. State is preserved in long-running language sessions across cell boundaries.
-- **Declarative Unix-Style Data Piping**: Pipe stdout/data buffers produced by one cell (`name:cell1`) directly into downstream cells (`input:cell1`) regardless of language differences.
-- **LSP Diagnostics & Virtual Documents**: Integrates with language servers (`metals`, `pyright`, `r-languageserver`, `clojure-lsp`, `cl-lsp`, `idris2-lsp`) via JSON-RPC, exposing virtual document buffers for real-time code diagnostics.
+- **Polyglot Execution**: Run cells across Bash, Python, R, Clojure, Common Lisp (SBCL), Scala, Idris 2, and Node.js. Script sessions reconstruct state by replaying previous successful cells. **Replay repeats side effects** such as file writes and network calls; use `replayPreviousCells: false` for independent cells that must execute once. Idris uses independent execution by default.
+- **Cross-Language Data Buffers**: Pass stdout produced by one cell (`name:cell1`) to a downstream cell (`input:cell1`) through `WEAVE_INPUT`. Stderr remains separate from buffer data. Input is supplied through the environment, not stdin.
+- **LSP Virtual Documents**: Sends cell contents to available language servers via JSON-RPC. Server startup and shutdown have bounded timeouts; an unavailable server does not prevent execution.
 - **Granular Code & Output Visibility**: Control document presentation per cell using attributes (`code:visible|hidden`, `output:visible|hidden`). Hidden cells continue to execute and maintain pipeline state while staying invisible in rendered Markdown.
 - **Dedicated Display Blocks**: Decouple cell execution from document presentation using ` ```render:<cell_name> ` blocks for clean output placement.
 - **File & Media Artifact Handling**: Support cells generating binary file artifacts (e.g. SVG plots, JSON datasets, model binaries) that are embedded into Markdown or processed by downstream cells.
 - **Default CSS Styling (`mlisp.css`) & MathJax Support**: Standardized CSS styling bundled with the repository for HTML export via Pandoc with MathJax LaTeX math rendering.
-- **Declarative Language Registry (`languages.json`)**: Configure language binaries, REPL flags, sentinel templates, and input buffer injection preambles without modifying core engine code.
+- **Declarative Language Registry (`languages.json`)**: Configure language binaries, script flags, sentinel templates, and input buffer injection preambles without modifying core engine code.
 
 ---
 
@@ -60,17 +60,17 @@
 ### Running Tests
 
 ```bash
-scala-cli test .
+scala-cli test . --server=false
 ```
 
 ### Running a Notebook
 
 ```bash
 # Execute sample pipeline
-scala-cli run . -- examples/sample_pipeline.md -o artefacts/output.md
+scala-cli run . --server=false -- examples/sample_pipeline.md -o artefacts/output.md
 
 # Execute R Linear Discriminant Analysis example
-scala-cli run . -- examples/linear_discriminant_analysis.md -o artefacts/output_lda.md
+scala-cli run . --server=false -- examples/linear_discriminant_analysis.md -o artefacts/output_lda.md
 ```
 
 ### Exporting Executed Markdown to HTML via Pandoc with `mlisp.css` and MathJax
@@ -95,12 +95,16 @@ echo '[{"id": 1, "score": 95}, {"id": 2, "score": 88}]'
 
 | Attribute | Description | Default |
 | :--- | :--- | :--- |
-| `name:<id>` | Unique identifier for the cell's output buffer | Optional |
+| `name:<id>` | Unique identifier; only named cells execute | Unnamed fences are displayed only |
 | `lang:<language>` | Language identifier (`bash`, `python`, `r`, `clojure`, `lisp`, `scala`, `idris`) | `bash` |
-| `input:<id1>,<id2>` | Input buffer dependency piped into this cell | None |
+| `input:<id>` | One input buffer supplied through `WEAVE_INPUT` | None |
 | `type:<format>` | Buffer content type (`json`, `xml`, `text`) | `text` |
 | `code:<vis>` | Code block visibility (`visible` or `hidden`) | `visible` |
 | `output:<vis>` | Inline output block visibility (`visible` or `hidden`) | `visible` |
+
+Duplicate names, dependency cycles, missing buffers, and multiple input declarations are errors. A failed cell stops the pipeline and returns a nonzero CLI exit status; the existing output document is preserved. Output buffers retain stdout whitespace and trailing newlines. Cells without `input:` do not inherit a preceding cell's input.
+
+For replayed Bash, Python, R, Node.js, and SBCL cells, the runner restores each cell's original `WEAVE_INPUT`. Clojure cells should read `(System/getProperty "WEAVE_INPUT")` to obtain the original input during replay. Other runners need an `inputBufferTemplate` when replayed cells use different inputs. Environment variables are intended for small text buffers; use files for large or binary data.
 
 ### Downstream Piping Example
 
@@ -142,6 +146,8 @@ Executed Markdown output files are generated directly into [`artefacts/`](artefa
 ## Declarative Language Configuration (`languages.json`)
 
 `weave-lsp` is fully configurable via `languages.json`:
+
+Use script runners without interactive flags so interpreter errors produce nonzero exit codes. `timeoutMillis` defaults to 120000 per cell. `replayPreviousCells` defaults to `true` except for Idris; disabling it starts each cell with fresh state. Missing explicit configuration files and malformed configurations fail instead of silently selecting different commands.
 
 ```json
 {

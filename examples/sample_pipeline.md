@@ -3,12 +3,12 @@
 This notebook demonstrates cross-language piping, persistent state, and dedicated buffer rendering across Bash, Python, Clojure, and Common Lisp.
 
 ## Step 1: Fetch Raw JSON via Bash
-```name:fetch_users lang:bash type:json output:hidden
+```name:fetch_users lang:bash type:json output:visible
 echo '[{"id": 1, "name": "Alice", "score": 85}, {"id": 2, "name": "Bob", "score": 92}, {"id": 3, "name": "Charlie", "score": 78}]'
 ```
 
 ## Step 2: Transform Data in Python (Persistent State)
-```name:processed_users input:fetch_users lang:python type:json output:hidden
+```name:processed_users input:fetch_users lang:python type:json output:visible
 import sys, os, json
 
 raw_input = os.getenv("WEAVE_INPUT")
@@ -21,7 +21,7 @@ print(json.dumps(top_students))
 ```
 
 ## Step 3: Reuse Persistent State in Python
-```name:python_summary input:processed_users lang:python type:json output:hidden
+```name:python_summary input:processed_users lang:python type:json output:visible
 # 'top_students' is available from Step 2
 avg_score = sum(u["score"] for u in top_students) / len(top_students)
 report = {
@@ -33,14 +33,14 @@ print(json.dumps(report))
 ```
 
 ## Step 4: Process Input Buffer in Clojure
-```name:clj_summary input:python_summary lang:clojure type:json output:hidden
+```name:clj_summary input:python_summary lang:clojure type:json output:visible
 ;; Read piped input buffer from WEAVE_INPUT system property or env var
 (let [raw-input (or (System/getProperty "WEAVE_INPUT") (System/getenv "WEAVE_INPUT"))]
   (println (str "{\"clojure_status\": \"ok\", \"input_length\": " (count (or raw-input "")) "}")))
 ```
 
 ## Step 5: Process Data in Common Lisp
-```name:lisp_summary input:clj_summary lang:lisp type:json output:hidden
+```name:lisp_summary input:clj_summary lang:lisp type:json output:visible
 ;; Common Lisp execution with SBCL
 (let ((raw-input (sb-ext:posix-getenv "WEAVE_INPUT")))
   (format t "{\"lisp_status\": \"ok\", \"engine\": \"sbcl\", \"bytes_received\": ~a}" (length (or raw-input ""))))

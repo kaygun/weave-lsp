@@ -7,6 +7,27 @@ This notebook demonstrates cross-language piping, persistent state, and dedicate
 echo '[{"id": 1, "name": "Alice", "score": 85}, {"id": 2, "name": "Bob", "score": 92}, {"id": 3, "name": "Charlie", "score": 78}]'
 ```
 
+> **Output [fetch_users]**
+```json
+[
+  {
+    "id": 1,
+    "name": "Alice",
+    "score": 85
+  },
+  {
+    "id": 2,
+    "name": "Bob",
+    "score": 92
+  },
+  {
+    "id": 3,
+    "name": "Charlie",
+    "score": 78
+  }
+]
+```
+
 
 ## Step 2: Transform Data in Python (Persistent State)
 ```python
@@ -19,6 +40,22 @@ data = json.loads(raw_input) if raw_input else []
 top_students = [u for u in data if u["score"] > 80]
 
 print(json.dumps(top_students))
+```
+
+> **Output [processed_users]**
+```json
+[
+  {
+    "id": 1,
+    "name": "Alice",
+    "score": 85
+  },
+  {
+    "id": 2,
+    "name": "Bob",
+    "score": 92
+  }
+]
 ```
 
 
@@ -34,6 +71,18 @@ report = {
 print(json.dumps(report))
 ```
 
+> **Output [python_summary]**
+```json
+{
+  "total_top_students": 2,
+  "average_score": 88.5,
+  "names": [
+    "Alice",
+    "Bob"
+  ]
+}
+```
+
 
 ## Step 4: Process Input Buffer in Clojure
 ```clojure
@@ -42,12 +91,29 @@ print(json.dumps(report))
   (println (str "{\"clojure_status\": \"ok\", \"input_length\": " (count (or raw-input "")) "}")))
 ```
 
+> **Output [clj_summary]**
+```json
+{
+  "clojure_status": "ok",
+  "input_length": 76
+}
+```
+
 
 ## Step 5: Process Data in Common Lisp
 ```lisp
 ;; Common Lisp execution with SBCL
 (let ((raw-input (sb-ext:posix-getenv "WEAVE_INPUT")))
   (format t "{\"lisp_status\": \"ok\", \"engine\": \"sbcl\", \"bytes_received\": ~a}" (length (or raw-input ""))))
+```
+
+> **Output [lisp_summary]**
+```json
+{
+  "lisp_status": "ok",
+  "engine": "sbcl",
+  "bytes_received": 45
+}
 ```
 
 
@@ -87,7 +153,7 @@ print(json.dumps(report))
 ```json
 {
   "clojure_status": "ok",
-  "input_length": 75
+  "input_length": 76
 }
 ```
 
@@ -97,6 +163,7 @@ print(json.dumps(report))
 {
   "lisp_status": "ok",
   "engine": "sbcl",
-  "bytes_received": 44
+  "bytes_received": 45
 }
 ```
+

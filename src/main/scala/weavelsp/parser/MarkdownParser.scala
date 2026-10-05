@@ -5,6 +5,8 @@ import scala.collection.mutable.ArrayBuffer
 
 object MarkdownParser:
 
+  private val openingFence = "^ {0,3}(`{3,}|~{3,})(.*)$".r
+
   def parseDocument(markdownText: String): NotebookDocument =
     val lines = markdownText.linesIterator.toList
     val cells = ArrayBuffer[NotebookCell]()
@@ -12,6 +14,8 @@ object MarkdownParser:
     val currentTextLines = ArrayBuffer[String]()
     var inCodeBlock = false
     var currentHeader = ""
+    var currentFence = ""
+    var openingLine = ""
     val currentCodeLines = ArrayBuffer[String]()
 
     def flushText(): Unit =
@@ -20,13 +24,11 @@ object MarkdownParser:
         currentTextLines.clear()
 
     lines.foreach { line =>
-      val trimmed = line.trim
-      if !inCodeBlock && trimmed.startsWith("```") then
-        flushText()
-        inCodeBlock = true
-        currentHeader = trimmed.stripPrefix("```").trim
-        currentCodeLines.clear()
-      else if inCodeBlock && trimmed == "```" then
+      val trimmed = line.dropWhile(_ == ' ')
+      val closesFence = inCodeBlock && line.length - trimmed.length <= 3 &&
+        trimmed.takeWhile(_ == currentFence.head).length >= currentFence.length &&
+        trimmed.dropWhile(_ == currentFence.head).forall(c => c == ' ' || c == '\t')
+      if closesFence then
         inCodeBlock = false
         val codeContent = currentCodeLines.mkString("\n")
 
@@ -41,14 +43,34 @@ object MarkdownParser:
       else if inCodeBlock then
         currentCodeLines += line
       else
-        currentTextLines += line
+        line match
+          case openingFence(fence, header) if fence.head != '`' || !header.contains('`') =>
+            flushText()
+            inCodeBlock = true
+            currentFence = fence
+            openingLine = line
+            currentHeader = header.trim
+            currentCodeLines.clear()
+          case _ => currentTextLines += line
     }
 
+    // Keep incomplete fences as literal text; never execute a partial cell.
+    if inCodeBlock then
+      currentTextLines += openingLine
+      currentTextLines ++= currentCodeLines
     flushText()
     NotebookDocument(cells.toList)
 
   def renderDocument(doc: NotebookDocument, bufferStore: BufferStore): String =
     val sb = new StringBuilder()
+
+    def appendBlock(language: String, content: String): Unit =
+      val longestRun = "`+".r.findAllIn(content).map(_.length).maxOption.getOrElse(0)
+      val fence = "`" * math.max(3, longestRun + 1)
+      sb.append(fence).append(language).append("\n")
+      sb.append(content)
+      if !content.endsWith("\n") then sb.append("\n")
+      sb.append(fence).append("\n")
 
     doc.cells.foreach {
       case TextCell(text) =>
@@ -56,33 +78,28 @@ object MarkdownParser:
 
       case CodeCell(attrs, code, outputOpt, exitCode) =>
         val langStr = attrs.lang.getOrElse("")
-        val headerLine = s"```$langStr"
-
         if attrs.codeVisibility == Visibility.Visible then
-          sb.append(headerLine).append("\n")
-          sb.append(code).append("\n")
-          sb.append("```\n")
+          appendBlock(langStr, code)
 
         if attrs.outputVisibility == Visibility.Visible then
           outputOpt.orElse(attrs.name.flatMap(bufferStore.get).map(_.content)).foreach { outContent =>
             if outContent.nonEmpty then
               val formatTag = attrs.contentType.toString.toLowerCase
               sb.append(s"\n> **Output [${attrs.name.getOrElse("cell")}]**\n")
-              sb.append("```").append(formatTag).append("\n")
-              sb.append(attrs.contentType.format(outContent)).append("\n")
-              sb.append("```\n")
+              appendBlock(formatTag, attrs.contentType.format(outContent))
           }
         sb.append("\n")
 
       case RenderCell(bufName, cType, fmt) =>
-        val formatTag = cType.toString.toLowerCase
-        sb.append(s"```$formatTag\n")
-        bufferStore.get(bufName) match
+        val effectiveType = bufferStore.get(bufName).map(_.contentType).filter(_ => cType == ContentType.PlainText).getOrElse(cType)
+        val formatTag = effectiveType.toString.toLowerCase
+        val content = bufferStore.get(bufName) match
           case Some(buf) =>
-            sb.append(cType.format(buf.content)).append("\n")
+            if fmt == "raw" then buf.content else effectiveType.format(buf.content)
           case None =>
-            sb.append(s"<!-- Buffer '$bufName' is empty or not yet generated -->\n")
-        sb.append("```\n\n")
+            s"<!-- Buffer '$bufName' is empty or not yet generated -->"
+        appendBlock(formatTag, content)
+        sb.append("\n")
     }
 
-    sb.toString().trim + "\n"
+    sb.toString()
